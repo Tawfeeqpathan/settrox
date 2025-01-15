@@ -1,0 +1,17 @@
+const express = require("express");
+const {
+  allSpecificationsBycategory,
+  allSpecifications,
+  specifications,
+} = require("../controllers/specification-controller");
+
+const router = express.Router();
+
+router.post("/specifications", specifications);
+
+router.get("/specifications/category/:categoryId", allSpecificationsBycategory);
+
+router.get("/specifications", allSpecifications);
+
+
+module.exports = router

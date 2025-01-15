@@ -1,0 +1,21 @@
+const mongoose = require("mongoose");
+
+const specificationSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
+    label: { type: String, required: true },
+    value: { type: String, required: true },
+  },
+  {
+    Timestamp: true,
+  }
+);
+
+const Specification = mongoose.model("Specification", specificationSchema);
+
+module.exports = Specification;

@@ -1,0 +1,14 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/reactserver55/public_html/api"
+PassengerBaseURI "/api"
+PassengerNodejs "/home/reactserver55/nodevenv/public_html/api/18/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION BEGIN
+<IfModule Litespeed>
+SetEnv MONGO_URI mongodb+srv://productionuser:7bnOqw5MyZgeRH3z@cluster0.e6nyh.mongodb.net/setterox?retryWrites=true&w=majority&appName=Cluster0
+SetEnv JWT_SECRET aVery$Strong#SecretKey123!@#
+SetEnv REFRESH_SECRET_KEY aVery$Strong#SecretKey123!@#
+</IfModule>
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION END

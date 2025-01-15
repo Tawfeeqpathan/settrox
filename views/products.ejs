@@ -1,0 +1,23 @@
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Product ID</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Stock</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% products.forEach(product => { %>
+          <tr>
+            <td><%= product.id %></td>
+            <td><%= product.name %></td>
+            <td>$<%= product.price %></td>
+            <td><%= product.stock %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    

@@ -1,0 +1,95 @@
+<div class="container">
+  <h1>Edit FAQ</h1> 
+  <form id="myForm" action="" method="POST">
+    <input type="hidden" name="id" id="editId" value="<%= faq._id %>">
+
+    <div class="form-group">
+      <label for="title">Title:</label>
+      <input type="text" id="title" name="title" class="form-control" value="<%= faq.title %>">
+      
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description:</label>
+      <textarea id="description" name="description" class="form-control"><%= faq.description %></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="position">Position:</label>
+      <input type="number" id="position" name="position" class="form-control"  value="<%= faq.position %>">
+    </div>
+
+    <div class="form-group">
+      <label for="status">Status:</label>
+      <select id="status" name="status" class="form-control" >
+        <option value="active" <%= faq.status === 'active' ? 'selected' : '' %>>Active</option>
+        <option value="inactive" <%= faq.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Update</button>
+  </form>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<style>
+  .is-invalid {
+    border-color: #dc3545 !important; /* Bootstrap red color */
+  }
+  .invalid-feedback {
+    color: #dc3545; /* Match the red color for the message */
+    font-size: 0.875rem; /* Optional: Adjust message size */
+  }
+</style>
+<script>
+  
+$('#myForm').on('submit', function (e) {
+  e.preventDefault(); // Prevent default form submission
+ 
+ // Serialize form data
+ const serializedData = $('#myForm').serializeArray(); // Converts to an array of objects
+  const formData = {};
+  serializedData.forEach(field => {
+    formData[field.name] = field.value.trim(); // Trim values and map them into formData
+  });
+
+  // Validate inputs
+  let errors = [];
+  if (!formData.title) {    
+    let errMsg = 'Title is required.';
+    errors.push();  
+    $('#title')
+      .addClass('is-invalid') 
+      .after(`<div class="invalid-feedback">${errMsg}</div>`);  
+  }
+  if (!formData.description) {
+    errors.push('Description is required.');
+    
+  }
+
+  // If there are errors, display them
+  if (errors.length > 0) {
+    toastr.error(errors.join('<br>'), 'Validation Error'); 
+    return;
+  }
+
+  // Send the form data via AJAX
+  $.ajax({
+    url: 'http://localhost:3000/api/faq/update', // Backend route to handle form submission
+    type: 'POST',
+    dataType: 'json',
+    data: formData,
+    success: function (response) { 
+      toastr.success(response.message, 'Success');
+      //$('#myForm')[0].reset(); // Reset the form
+    },
+    error: function (xhr) {
+      const errorMessage = xhr.responseJSON?.message || 'Something went wrong!';
+      toastr.error(errorMessage, 'Error');
+    },
+  });
+  });
+  
+</script>

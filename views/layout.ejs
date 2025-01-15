@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= page %> - Admin Dashboard</title>
+<link rel="stylesheet" href="http://localhost:3000/css/styles.css" >
+<style> 
+.btn-danger{
+  background:#cb0f0f;
+} 
+.dataTables_filter{
+  margin:7px !important;
+}
+</style>  
+  
+</head>
+<body>
+ 
+  <div class="sidebar">
+    <h2>Admin Panel</h2>
+    <ul>
+      <li><a href="/">Dashboard</a></li>
+      <li href="/users"><a href="/users">Users</a></li>
+      <li><a href="/products">Products</a></li>
+      <li><a href="/orders">Orders</a></li>
+      <li><a href="/faqs">Faqs</a></li>
+    </ul>
+  </div>
+  <div class="main-content">
+    <div class="header"> 
+    <div class="flex">  <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+       <h1><%= page %></h1>
+      </div>
+       <div>
+        <% if (page==='Users') { %>
+          <button  id="openPopup"  class="modern-button full" onclick="">Create <%= page %></button> 
+        <% } else { %>
+          <!-- Content to render if the condition is false -->
+        <% } %>
+
+       </div>
+  
+    </div>
+    <div class="content">
+      <div class="table-container" style="margin-top:30px;">
+        <%- include(content) %> <!-- Dynamically include the partial -->
+      </div>
+    </div>
+
+    <div id="popup" class="popup">
+      <div class="popup-card">
+        <span id="closePopup" class="popup-close">&times;</span>
+        <h2 class="popup-title">User Form</h2>
+        <p class="popup-text">Please fill out the form below to proceed.</p>
+        <form id="userForm" class="popup-form">
+          <div class="form-group">
+            <label for="username">Name:</label>
+            <input type="text" id="username" name="username" placeholder="Enter your name" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+          </div>
+          <button type="submit" class="modern-button">Submit</button>
+        </form>
+      </div>
+    </div>
+    
+  </div>
+  <script>
+    const body = document.body;
+    function toggleMenu() {
+      body.classList.toggle('sidebar-hidden');
+    }
+    document.getElementById('openPopup').addEventListener('click', () => {
+  document.getElementById('popup').style.display = 'flex';
+});
+
+document.getElementById('closePopup').addEventListener('click', () => {
+  document.getElementById('popup').style.display = 'none';
+});
+
+// Close popup when clicking outside the content
+window.addEventListener('click', (e) => {
+  const popup = document.getElementById('popup');
+  if (e.target === popup) {
+    popup.style.display = 'none';
+  }
+});
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+
+<table id="faqTable" class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Faq ID</th>
+      <th>Title</th>
+      <th>Description</th>
+      <th>Position</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+<script>
+  $(document).ready(function () {
+  const table = $('#faqTable').DataTable({
+    processing: true,
+    serverSide: true,
+    ajax: {
+      url: 'api/faq/list', // Endpoint to fetch FAQs
+      type: 'GET',
+    },
+    columns: [
+      {
+        data: null, // The data is dynamically generated
+        name: 'serialNumber',
+        orderable: false, // Disable sorting for this column
+        searchable: false, // Disable searching for this column
+        render: function (data, type, row, meta) {
+          return meta.row + 1; // Generate serial number
+        },
+      },
+      { data: 'title', name: 'Title' },
+      { data: 'description', name: 'Description', orderable: false,
+      searchable: false },
+      { data: 'position', name: 'Position' },
+      {
+        data: 'status',
+        render: function (data, type, row) {
+          return `
+            <button class="btn btn-sm ${data === 'active' ? 'btn-success' : 'btn-danger'} toggle-status" data-id="${row._id}">
+              ${data === 'active' ? 'Active' : 'Inactive'}
+            </button>`;
+        },
+      },
+      {
+        data: null,
+        orderable: false,
+        searchable: false,
+        render: function (data, type, row) {
+          return `
+            <button class="btn btn-sm btn-primary edit-faq" data-id="${row._id}" title="Edit">
+              <i class="fas fa-pencil-alt"></i> 
+            </button>
+            <button class="btn btn-sm btn-danger delete-faq" data-id="${row._id}" title="Delete">
+              <i class="fas fa-trash"></i> 
+            </button>`;
+        },
+      },
+    ],
+  });
+
+  // Toggle status
+  $('#faqTable').on('click', '.toggle-status', function () {
+    const faqId = $(this).data('id');
+    $.ajax({
+      url: `api/faq/${faqId}/toggle-status`,
+      type: 'PATCH',
+      success: function () {
+        table.ajax.reload();
+      },
+      error: function (err) {
+        console.error(err);
+      },
+    });
+  });
+
+  // Edit FAQ
+  $('#faqTable').on('click', '.edit-faq', function () {
+    const faqId = $(this).data('id'); 
+    window.location.href = `/faqs/${faqId}/edit`;
+  });
+
+  // Delete FAQ
+  $('#faqTable').on('click', '.delete-faq', function () {
+    const faqId = $(this).data('id');
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'This action cannot be undone!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        $.ajax({
+          url: `/faqs/${faqId}`,
+          type: 'DELETE',
+          success: function () {
+            table.ajax.reload();
+          },
+          error: function (err) {
+            console.error(err);
+          },
+        });
+      }
+    });
+  });
+});
+
+</script>
+
+
+  
