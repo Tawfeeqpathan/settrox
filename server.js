@@ -26,7 +26,7 @@ const categoryRoutes = require("./routes/category-routes");
 const customerRoutes = require("./routes/customer-routes");
 
 const corsOptions = {
-    origin: "https://react.server55.net", // Replace with your domain
+    origin: "https://react.server55.net", 
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
     credentials: true, // Allow cookies if needed
