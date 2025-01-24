@@ -8,6 +8,7 @@ router.post('/add', productVariantController.addVariant);
 // Edit an existing product variant
 router.put('/update', productVariantController.updateVariant);
 
+
 // Delete a product variant
 router.delete('/delete/:productId/:variantId', productVariantController.deleteVariant);
 

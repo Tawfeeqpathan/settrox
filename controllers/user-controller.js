@@ -209,8 +209,6 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-
-
 // Add Address
 exports.addAddress = async (req, res) => {
   const { userId } = req.params;
@@ -286,3 +284,8 @@ exports.setDefaultAddress = async (req, res) => {
     res.status(500).json({ message: "Error setting default address", error });
   }
 };
+
+
+
+
+

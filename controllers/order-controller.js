@@ -4,6 +4,8 @@ const Cart = require('../models/cart');
 const User = require('../models/user');
 const Product = require('../models/products');
 const bcrypt = require("bcryptjs");
+const Address = require('../models/address');
+const user = require('../models/user');
 
 const calculateDiscountPrice = async (originalPrice, couponId) => {
   try {
@@ -169,21 +171,163 @@ exports.createOrder = async (req, res) => {
     res.status(500).json({ message: 'Error creating order', error: error.message });
   }
 };
+exports.createPreOrder = async (req, res) => {
+  try {
+    const { userId,couponId,productId,variantId,subVariant,quantity } = req.body;
+    
+  
+    const product = await Product.findById(productId.toString());
+    if(!product){
+      res.status(400).json({msg:'Product not found'})
+    }
+
+    // Calculate the total price
+    let totalPrice = 0;
+    let remainingAmount = 0;
+    const orderProducts = [];
+ let variantDetails = {}
+  
+   if(variantId){
+    variantDetails = product.variants.find((i)=>i._id.toString() == variantId.toString());
+        orderProducts.push({
+          productId: productId,
+          quantity:quantity,
+          price: variantDetails.preOrderPrice,
+          title: `${product?.title?.get('en')} (${variantDetails?.attributeName?.split('-')[0] || ''},${subVariant||''})`,
+        })
+        totalPrice += variantDetails.preOrderPrice * quantity;
+        remainingAmount = totalPrice - variantDetails.preOrderPrice
+      }else{
+        orderProducts.push({
+          productId: productId,
+          quantity:quantity,
+          price: product.preOrderPrice,
+          title: `${product?.title?.get('en')} (${variantDetails?.attributeName?.split('-')[0] || ''},${subVariant||''})`,
+        })
+        totalPrice += product.preOrderPrice * quantity;
+        remainingAmount = totalPrice - product.preOrderPrice
+      }
+    
+      let user;
+    const existingUser = await User.findOne({ _id:userId });
+
+        if (!existingUser) {
+          let name = req.body.name;
+          let email = req.body.email;
+          let phone = req.body.phone_number;
+            // Hash the password
+            const hashedPassword = await bcrypt.hash('123456', 12); 
+            // Create a new user with optional role (default: "user")
+            user = new User({
+                name,
+                guestId,
+                email,
+                password: hashedPassword,
+                phone,
+                role: "guest", // Default role is "user"
+            });
+            await user.save();
+          
+          } else{
+            user = existingUser
+          }
+
+            const userObj = await User.findById(user._id); 
+            let shipAddress = {};
+            shipAddress.label = "Ship";
+            shipAddress.street = req.body.street;
+            shipAddress.city = req.body.city;
+            shipAddress.state = req.body.state;
+            shipAddress.country = req.body.country;
+            shipAddress.zipcode = req.body.zipcode; 
+
+            userObj.addresses.push(shipAddress);
+            // Get the newly added address ID
+            const shipAddressId = userObj.addresses[userObj.addresses.length - 1]._id;
+            await userObj.save();
+
+            const userBillObj = await User.findById(user._id); 
+            
+            let billAddress = {};
+            billAddress.label = "Ship";
+            billAddress.street = req.body.bill_street;
+            billAddress.city = req.body.bill_city;
+            billAddress.state = req.body.bill_state;
+            billAddress.country = req.body.bill_country;
+            billAddress.zipcode = req.body.bill_zipcode; 
+
+            userBillObj.addresses.push(billAddress);
+            // Get the newly added address ID
+            const billAddressId = userBillObj.addresses[userBillObj.addresses.length - 1]._id;
+            await userBillObj.save();
+
+            // Create the order
+            const order = new Order({
+                  userId: user._id,
+                  couponId,
+                  shipAddressId,
+                  billAddressId,
+                  products: orderProducts,
+                  totalPrice,
+                  remainingAmount,
+                  status: 'preOrder', // Default status
+            });
+
+            await order.save(); 
+            // Clear the cart after creating the order
+            await Cart.findOneAndDelete({ userId });
+            
+            res.status(200).json({ message: 'preOrder created successfully', order });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error creating order', error: error.message });
+  }
+};
 
 // Get orders by user ID
 exports.getOrdersByUser = async (req, res) => {
   try {
-    const { userId } = req.body; 
-    const orders = await Order.find({userId:userId.toString()}).populate({
-      path: 'products.productId',  
-      model: 'Products',          // Model to use for population
-      select: 'title image price originalPrice stock'     
+    const { userId } = req.body;
+
+    // Fetch orders for the user and populate product details
+    const data = await Order.find({ userId: userId.toString() }).populate({
+      path: 'products.productId',
+      model: 'Products',
+      select: 'title image price originalPrice stock',
     });
-      
-    
-    if (!orders || orders.length === 0) {
+
+    // Fetch user details to get addresses
+    const userDetails = await User.findById(userId);
+
+    // Check if user exists
+    if (!userDetails) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Check if user has any addresses
+    if (!userDetails.addresses || userDetails.addresses.length === 0) {
+      return res.status(404).json({ message: 'No addresses found for this user.' });
+    }
+
+    // Handle case when no orders are found
+    if (!data || data.length === 0) {
       return res.status(200).json({ message: 'No orders found for this user.' });
     }
+
+    // Map orders and attach the corresponding shipping address
+    const orders = data.map((order) => {
+      const plainOrder = order.toObject(); // Convert Mongoose document to plain object
+      const shipAddress = userDetails.addresses.find(
+        (addr) => addr._id.toString() === plainOrder.shipAddressId.toString()
+      );
+
+      return {
+        ...plainOrder,
+        shipAddress: shipAddress || null, // Attach the shipping address or null if not found
+      };
+    });
+
     res.status(200).json(orders);
   } catch (error) {
     console.error(error);
@@ -199,7 +343,8 @@ exports.getOrderById = async (req, res) => {
       path: 'products.productId',  
       model: 'Products',          // Model to use for population
       select: 'title image price originalPrice stock'     
-    });
+    })
+   
       
     
     if (!orders || orders.length === 0) {

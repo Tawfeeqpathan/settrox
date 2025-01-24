@@ -5,6 +5,16 @@ const VariantSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  preOrder:{
+    type: Boolean,
+    default: false,
+  },
+  preOrderPrice:{
+    type: Number,
+  },
+  preOrderDate:{
+    type:Date,
+  },
   price: {
     type: Number,
     required: true,
@@ -20,7 +30,7 @@ const VariantSchema = new mongoose.Schema({
   productId: {
     type: String,
     required: true,
-    unique: true, // Ensures each variant has a unique productId
+    unique: true, 
   },
   barcode: {
     type: String,
@@ -30,15 +40,36 @@ const VariantSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
-  image: {
-    type: String,
-    required: false,
-  },
-  attributes: {
-    type: Map,
-    of: mongoose.Schema.Types.ObjectId, // Dynamic attribute-value pairs
-    required: true,
-  },
+  attributeName:{
+      type: String,
+    },
+  attributeValue:{
+      type: String,
+    },
+    attributeImage:{
+      type: String,
+    },
+    attributeType:{
+      type: String,
+    },
+    subAttributes:[
+      {
+      type:{
+          type: String,
+        },
+      name:{
+        type: String,
+      },
+      value:{
+        type: String,
+      },
+      image:{
+        type: String,
+      },
+    }
+  
+  ],
+  
 });
 
 // Define the product schema
@@ -48,6 +79,17 @@ const productSchema = new mongoose.Schema({
     of: String,  
     required: true,
   },
+  preOrder:{
+    type: Boolean,
+    default: false,
+  },
+  preOrderPrice:{
+    type: Number,
+  },
+  preOrderDate:{
+    type:Date,
+  },
+
   description: {
     type: Map,
     of: String,  

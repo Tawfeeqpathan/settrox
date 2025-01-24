@@ -256,9 +256,6 @@ exports.getProductByIdFront = async (req, res) => {
       select: 'title attributes _id', // Include only the 'name' and '_id' fields from brand
     });
     if (!product) return res.status(404).json({ message: 'Product not found' });
-
-
-    let attributeData = await getProductWithAttributeDetails(product);
     // Get filtered products with pagination
     const similarProducts = await Product.find()
       .skip(0)
@@ -268,7 +265,7 @@ exports.getProductByIdFront = async (req, res) => {
       .skip(0)
       .limit(10);
       
-    res.status(200).json({product:product,attributeData:attributeData,similarProducts:similarProducts,bestProducts:bestProducts});
+    res.status(200).json({product:product,similarProducts:similarProducts,bestProducts:bestProducts});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -339,7 +336,9 @@ exports.updateProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     } 
-    const variants = transformToAttributes(req.body.variants); 
+    //const variants = transformToAttributes(req.body.variants); 
+   //console.log(variants);
+    
     
     // Update the product with the new values
     product.title = title || product.title;
@@ -365,7 +364,7 @@ exports.updateProduct = async (req, res) => {
     product.meta_title = meta_title || product.meta_title;
     product.meta_description = meta_description || product.meta_description;
     product.attributes = attributes || product.attributes;
-    product.variants = variants || product.variants;
+    //product.variants = variants || product.variants;
 
     // Save the updated product
    
@@ -380,9 +379,141 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
+exports.addVariantProduct = async (req, res) => {
+  try {
+    const data  = req.body;
+    const { productId } = req.params;
+    const product = await Product.findById(productId.toString());
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    if (!data) {
+      return res.status(404).json({ message: 'Data not found' });
+    }
+
+    // Separate primary and non-primary objects
+    const primaryVariants = data?.filter((item) => item.primary === true);
+    const subAttributes = data?.filter((item) => item.primary === false);
+
+    // Add primary variants to the product
+    primaryVariants.forEach((variant) => {
+      const newVariant = {
+        originalPrice: product.originalPrice || 0,
+        price: product.price || 0,
+        quantity: product.stock || 0,
+        discount: product.discount || 0,
+        productId: productId,
+        barcode: product.barcode || '',
+        sku: product.sku || '',
+        image: variant.image || '',
+        attributeName: variant.name || '',
+        attributeValue: variant.value || '',
+        attributeImage: variant.image || '',
+        attributeType: variant.type || '',
+        subAttributes: [], 
+      };
+
+      // Add the new variant to the product's variants array
+      product.variants.push(newVariant);
+    });
+
+
+    // Add all non-primary objects to the subAttributes array of every primary variant
+    subAttributes.forEach((subAttr) => {
+      product.variants?.forEach((variant) => {
+        variant.subAttributes.push({
+          type: subAttr.type || '',
+          name: subAttr.name || '',
+          value: subAttr.value || '',
+          image: subAttr.image || '',
+        });
+      });
+    });
+
+    // Save the updated product
+    await product.save();
+
+    res.status(200).json({
+      message: 'Variants and subAttributes added successfully',
+      success: true,
+      product,
+    });
+  } catch (error) {
+    console.error('Error adding variants:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+exports.updateVariant = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const updatedData = req.body;
+
+    // Find product by ID
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    product.variants = updatedData || product.variants;
+   
+    // Save the updated product
+    await product.save();
+    product.variants =  product.variants?.map((i)=>{
+      if(i.quantity>0){
+        i.preOrder= false;
+        i.preOrderPrice = 0;
+        i.preOrderDate = null;
+      }
+      return i
+    })
+    await product.save();
+    res.status(200).json({
+      message: 'Variant updated successfully',
+      success: true,
+      product,
+    });
+  } catch (error) {
+    console.error('Error updating variant:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+exports.deleteVariant = async (req, res) => {
+  try {
+    const { productId, variantId } = req.params;
+
+    // Find the product by ID
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Find the variant by ID
+    const variant = product.variants.id(variantId);
+    if (!variant) {
+      return res.status(404).json({ message: 'Variant not found' });
+    }
+
+    // Remove the variant using Mongoose pull method
+    product.variants.pull({ _id: variantId });
+
+    // Save the updated product
+    await product.save();
+
+    res.status(200).json({
+      message: 'Variant deleted successfully',
+      success: true,
+      product,
+    });
+  } catch (error) {
+    console.error('Error deleting variant:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+
 
 
 function transformToAttributes(variantData) {
+
   return variantData.map(variant => {
     if(variant.attributes){
       return variant;
@@ -392,10 +523,11 @@ function transformToAttributes(variantData) {
         price, 
         quantity, 
         discount, 
-        productId, 
+        productId,
         barcode, 
         sku, 
-        image, 
+        image,
+        
         ...attributes 
       } = variant;
   

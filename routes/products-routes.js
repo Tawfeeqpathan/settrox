@@ -8,7 +8,9 @@ const router = express.Router();
 
 // Create Product
 router.post('/add',upload.array('images', 5), productController.createProduct);
-
+router.put('/new/variant/:productId', productController.addVariantProduct);
+router.put('/update/variant/:productId', productController.updateVariant);
+router.delete('/delete/variant/:productId/:variantId', productController.deleteVariant);
 // Get All Products
 router.get('/', productController.getAllProducts);
 

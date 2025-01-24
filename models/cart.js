@@ -16,6 +16,12 @@ const CartSchema = new mongoose.Schema({
         required: true,
         min: 1,
       },
+      variantId:{
+        type: mongoose.Schema.Types.ObjectId,
+      },
+      subVariant:{
+        type:String
+      }
     },
   ],
 });
