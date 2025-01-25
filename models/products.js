@@ -52,24 +52,12 @@ const VariantSchema = new mongoose.Schema({
     attributeType:{
       type: String,
     },
-    subAttributes:[
-      {
-      type:{
-          type: String,
-        },
-      name:{
-        type: String,
-      },
-      value:{
-        type: String,
-      },
-      image:{
-        type: String,
-      },
-    }
-  
-  ],
-  
+    subAttribute:{
+      type: String,
+    },
+    subAttributeType:{
+      type: String,
+    }  
 });
 
 // Define the product schema

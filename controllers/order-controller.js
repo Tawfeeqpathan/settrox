@@ -196,7 +196,7 @@ exports.createPreOrder = async (req, res) => {
           title: `${product?.title?.get('en')} (${variantDetails?.attributeName?.split('-')[0] || ''},${subVariant||''})`,
         })
         totalPrice += variantDetails.preOrderPrice * quantity;
-        remainingAmount = totalPrice - variantDetails.preOrderPrice
+        remainingAmount = variantDetails.price * quantity - totalPrice ;
       }else{
         orderProducts.push({
           productId: productId,
@@ -205,7 +205,7 @@ exports.createPreOrder = async (req, res) => {
           title: `${product?.title?.get('en')} (${variantDetails?.attributeName?.split('-')[0] || ''},${subVariant||''})`,
         })
         totalPrice += product.preOrderPrice * quantity;
-        remainingAmount = totalPrice - product.preOrderPrice
+        remainingAmount = product.price * quantity - totalPrice ;
       }
     
       let user;
@@ -215,13 +215,19 @@ exports.createPreOrder = async (req, res) => {
           let name = req.body.name;
           let email = req.body.email;
           let phone = req.body.phone_number;
+         
+            const findemail = await User.findOne({ email });
+            if(findemail){
+             return res.status(401).json({success:false,message:'Email already used'})
+            }
+          
             // Hash the password
             const hashedPassword = await bcrypt.hash('123456', 12); 
             // Create a new user with optional role (default: "user")
             user = new User({
                 name,
-                guestId,
-                email,
+                guestId:userId,
+                email: email,
                 password: hashedPassword,
                 phone,
                 role: "guest", // Default role is "user"
@@ -277,7 +283,7 @@ exports.createPreOrder = async (req, res) => {
             // Clear the cart after creating the order
             await Cart.findOneAndDelete({ userId });
             
-            res.status(200).json({ message: 'preOrder created successfully', order });
+            res.status(200).json({ message: 'preOrder created successfully', success:true });
 
   } catch (error) {
     console.error(error);

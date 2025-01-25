@@ -395,39 +395,28 @@ exports.addVariantProduct = async (req, res) => {
     const primaryVariants = data?.filter((item) => item.primary === true);
     const subAttributes = data?.filter((item) => item.primary === false);
 
-    // Add primary variants to the product
-    primaryVariants.forEach((variant) => {
-      const newVariant = {
-        originalPrice: product.originalPrice || 0,
-        price: product.price || 0,
-        quantity: product.stock || 0,
-        discount: product.discount || 0,
-        productId: productId,
-        barcode: product.barcode || '',
-        sku: product.sku || '',
-        image: variant.image || '',
-        attributeName: variant.name || '',
-        attributeValue: variant.value || '',
-        attributeImage: variant.image || '',
-        attributeType: variant.type || '',
-        subAttributes: [], 
-      };
-
-      // Add the new variant to the product's variants array
-      product.variants.push(newVariant);
-    });
-
-
-    // Add all non-primary objects to the subAttributes array of every primary variant
     subAttributes.forEach((subAttr) => {
-      product.variants?.forEach((variant) => {
-        variant.subAttributes.push({
-          type: subAttr.type || '',
-          name: subAttr.name || '',
-          value: subAttr.value || '',
-          image: subAttr.image || '',
-        });
+      primaryVariants.forEach((variant) => {
+        const newVariant = {
+          originalPrice: product.originalPrice || 0,
+          price: product.price || 0,
+          quantity: product.stock || 0,
+          discount: product.discount || 0,
+          productId: productId,
+          barcode: product.barcode || '',
+          sku: product.sku || '',
+          image: variant.image || '',
+          attributeName: variant.name || '',
+          attributeValue: variant.value || '',
+          attributeImage: variant.image || '',
+          attributeType: variant.type || '',
+          subAttribute: subAttr.value || '', 
+          subAttributeType:subAttr.type || '',
+        };
+        product.variants.push(newVariant);
       });
+      
+     
     });
 
     // Save the updated product
