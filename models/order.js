@@ -11,6 +11,7 @@ const OrderSchema = new mongoose.Schema({
     {
       productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
       variantId: { type: mongoose.Schema.Types.ObjectId, },
+      image:{type:String},
       title:{type:String},
       quantity: { type: Number, required: true },
       price: { type: Number, required: true },  // Store price at the time of order

@@ -71,11 +71,13 @@ exports.createOrder = async (req, res) => {
       }
 
       totalPrice += product.price * cartProduct.quantity;
-
+     const variantDetails =  product.variants.find((i)=>(i._id==cartProduct.variantId))
       orderProducts.push({
         productId: cartProduct.productId,
         quantity: cartProduct.quantity,
+        title: `${product?.title?.get('en')} ${variantDetails?.attributeName?.split('-')[0] || ''} - ${cartProduct.subVariant||''}`,
         price: product.price,
+        image:variantDetails?.attributeImage || product.image[0]
       });
     }
     let discountPrice = 0;
@@ -193,7 +195,8 @@ exports.createPreOrder = async (req, res) => {
           productId: productId,
           quantity:quantity,
           price: variantDetails.preOrderPrice,
-          title: `${product?.title?.get('en')} (${variantDetails?.attributeName?.split('-')[0] || ''},${subVariant||''})`,
+          title: `${product?.title?.get('en')} ${variantDetails?.attributeName?.split('-')[0] || ''} - ${subVariant||''}`,
+          image:variantDetails?.attributeImage || product.image[0]
         })
         totalPrice += variantDetails.preOrderPrice * quantity;
         remainingAmount = variantDetails.price * quantity - totalPrice ;
@@ -202,7 +205,8 @@ exports.createPreOrder = async (req, res) => {
           productId: productId,
           quantity:quantity,
           price: product.preOrderPrice,
-          title: `${product?.title?.get('en')} (${variantDetails?.attributeName?.split('-')[0] || ''},${subVariant||''})`,
+          title: `${product?.title?.get('en')} ${variantDetails?.attributeName?.split('-')[0] || ''} - ${subVariant||''}`,
+          image: product.image[0]
         })
         totalPrice += product.preOrderPrice * quantity;
         remainingAmount = product.price * quantity - totalPrice ;
@@ -297,11 +301,7 @@ exports.getOrdersByUser = async (req, res) => {
     const { userId } = req.body;
 
     // Fetch orders for the user and populate product details
-    const data = await Order.find({ userId: userId.toString() }).populate({
-      path: 'products.productId',
-      model: 'Products',
-      select: 'title image price originalPrice stock',
-    });
+    const data = await Order.find({ userId: userId.toString() })
 
     // Fetch user details to get addresses
     const userDetails = await User.findById(userId);
@@ -392,8 +392,8 @@ exports.index = async (req, res) => {
   
     // Get filtered orders with pagination
     const orders = await Order.find(filter).populate({
-      path: 'userId',   // Populate single category
-      select: 'name _id', // Include only the 'name' and '_id' fields from Category
+      path: 'shipAddressId', // The field to populate
+      model: 'Address',  // The name of the model to use
     })
       .skip(paginationOptions.skip)
       .limit(paginationOptions.limit);
@@ -423,6 +423,34 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    if (status === 'shipped') {
+      // Use Promise.all to handle all updates concurrently
+      await Promise.all(
+        order.products.map(async (item) => {
+          const product = await Product.findById(item.productId.toString());
+    
+          if (product) {
+            
+         
+    
+          if (item.variantId) {
+            const variant = product.variants.find((v) => v._id.toString() === item.variantId);
+    
+            if (variant) {
+              if (variant.quantity > 0) {
+                variant.quantity -= 1;
+              }
+            }
+          } else {
+            if (product.stock > 0) {
+              product.stock -= 1;
+            }
+          }
+    
+          await product.save();
+        }
+        })
+      );}
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
     res.status(200).json({ message: 'Order status updated successfully', order });
